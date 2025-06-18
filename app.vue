@@ -6,9 +6,40 @@
         <div class="max-w-md mx-auto">
           <div class="divide-y divide-gray-200">
             <div class="py-8 text-base leading-6 space-y-4 text-gray-700 sm:text-lg sm:leading-7">
-              <!-- Quiz Progress -->
-              <div class="mb-4 text-sm text-gray-500">
-                Question {{ currentQuestionIndex + 1 }} of {{ questions.length }}
+              <!-- Quiz Progress and Score -->
+              <div class="mb-4">
+                <div class="flex justify-between items-center mb-2">
+                  <div class="text-sm text-gray-500">
+                    Question {{ currentQuestionIndex + 1 }} of {{ questions.length }}
+                  </div>
+                  <div class="text-sm font-medium" :class="isPassed ? 'text-green-600' : 'text-blue-600'">
+                    Score: {{ correctAnswersCount }}/{{ questions.length }} ({{ formattedScore }})
+                  </div>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2.5">
+                  <div class="h-2.5 rounded-full transition-all duration-500"
+                    :style="{ width: `${scorePercentage}%` }"
+                    :class="{
+                      'bg-green-500': scorePercentage >= 75,
+                      'bg-yellow-500': scorePercentage >= 50 && scorePercentage < 75,
+                      'bg-red-500': scorePercentage < 50
+                    }"
+                  ></div>
+                </div>
+                <div v-if="isQuizComplete" class="mt-4 text-center p-4 rounded-lg"
+                  :class="isPassed ? 'bg-green-100' : 'bg-red-100'">
+                  <p class="text-lg font-bold mb-2">
+                    Final Score: {{ correctAnswersCount }} out of {{ questions.length }} ({{ formattedScore }})
+                  </p>
+                  <p v-if="isPassed" class="text-green-700">
+                    Congratulations! You passed the quiz! 🎉<br>
+                    You exceeded the required 75% passing score.
+                  </p>
+                  <p v-else class="text-red-700">
+                    You need {{ Math.ceil(questions.length * 0.75) }} correct answers (75%) to pass.<br>
+                    Keep practicing and try again!
+                  </p>
+                </div>
               </div>
 
               <!-- Question -->
@@ -113,12 +144,22 @@ const currentQuestionIndex = ref(0)
 const selectedAnswers = ref<number[]>([])
 const showExplanation = ref(false)
 const isSubmitted = ref(false)
+const correctAnswersCount = ref(0)
 
 // Initialize with shuffled questions
 questions.value = shuffleArray(quizQuestions)
 
+// Quiz scoring and progress
+const isQuizComplete = computed(() => currentQuestionIndex.value === questions.value.length - 1 && isSubmitted.value)
+const scorePercentage = computed(() => (correctAnswersCount.value / questions.value.length) * 100)
+const formattedScore = computed(() => `${Math.round(scorePercentage.value)}%`)
+const isPassed = computed(() => scorePercentage.value >= 75)
+const requiredCorrectAnswers = computed(() => Math.ceil(questions.value.length * 0.75))
+
 // Track the shuffled answers for each question
 const shuffledAnswersMap = ref<Map<number, number[]>>(new Map())
+// Add tracking for question states
+const questionStates = ref<Map<number, { answered: boolean, correct: boolean }>>(new Map())
 
 // Get the current question with shuffled answers
 const currentQuestion = computed(() => {
@@ -141,7 +182,7 @@ const currentQuestion = computed(() => {
   }
 })
 
-// Map selected answer indices back to their original positions
+// Map selected answer indices to their original positions
 function mapToOriginalIndex(shuffledIndex: number): number {
   const shuffledIndices = shuffledAnswersMap.value.get(currentQuestionIndex.value)!
   return shuffledIndices.indexOf(shuffledIndex)
@@ -156,12 +197,25 @@ function mapToShuffledIndex(originalIndex: number): number {
 const hasSelectedAnswers = computed(() => selectedAnswers.value.length > 0)
 
 const allCorrectAnswersSelected = computed(() => {
-  const correctIndexes = currentQuestion.value.answers
-    .map((answer, index) => answer.isCorrect ? index : -1)
+  if (!currentQuestion.value) return false
+
+  // Get all correct answer indices
+  const correctAnswerIndices = currentQuestion.value.answers
+    .map((answer, index) => answer.isCorrect ? mapToOriginalIndex(index) : -1)
     .filter(index => index !== -1)
-  
-  return correctIndexes.length === selectedAnswers.value.length &&
-    correctIndexes.every(index => selectedAnswers.value.includes(index))
+
+  // For single answer questions
+  if (!currentQuestion.value.hasMultipleAnswers) {
+    return selectedAnswers.value.length === 1 && 
+           correctAnswerIndices.includes(selectedAnswers.value[0])
+  }
+
+  // For multiple answer questions:
+  // 1. Must select all correct answers
+  // 2. Must not select any incorrect answers
+  return correctAnswerIndices.length === selectedAnswers.value.length &&
+         correctAnswerIndices.every(index => selectedAnswers.value.includes(index)) &&
+         selectedAnswers.value.every(index => correctAnswerIndices.includes(index))
 })
 
 const hasPartiallyCorrectAnswers = computed(() => {
@@ -265,6 +319,19 @@ function submitAnswer() {
   if (!hasSelectedAnswers.value) return
   showExplanation.value = true
   isSubmitted.value = true
+
+  // Only update score if this question hasn't been answered correctly before
+  const currentState = questionStates.value.get(currentQuestionIndex.value)
+  if (!currentState?.correct) {
+    if (allCorrectAnswersSelected.value) {
+      correctAnswersCount.value++
+    }
+    // Store the state of this question
+    questionStates.value.set(currentQuestionIndex.value, {
+      answered: true,
+      correct: allCorrectAnswersSelected.value
+    })
+  }
 }
 
 function nextQuestion() {
@@ -285,16 +352,21 @@ function resetQuestionState() {
   selectedAnswers.value = []
   showExplanation.value = false
   isSubmitted.value = false
-  // Shuffle answers for the current question
-  const indices = Array.from({ length: currentQuestion.value.answers.length }, (_, i) => i)
-  shuffledAnswersMap.value.set(currentQuestionIndex.value, shuffleArray(indices))
+  
+  // Only shuffle answers if they haven't been shuffled for this question yet
+  if (!shuffledAnswersMap.value.has(currentQuestionIndex.value)) {
+    const indices = Array.from({ length: currentQuestion.value.answers.length }, (_, i) => i)
+    shuffledAnswersMap.value.set(currentQuestionIndex.value, shuffleArray(indices))
+  }
 }
 
 function restartQuiz() {
   // Shuffle questions on restart
   questions.value = shuffleArray(quizQuestions)
-  // Clear the shuffled answers map
+  // Clear all states
   shuffledAnswersMap.value.clear()
+  questionStates.value.clear()
+  correctAnswersCount.value = 0
   currentQuestionIndex.value = 0
   resetQuestionState()
 }
