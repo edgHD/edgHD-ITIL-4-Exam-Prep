@@ -3028,7 +3028,7 @@ export const quizQuestions: Question[] = [
   },
   {
     question:
-      "What are the three main categories of ITIL 4 management practices? (Select all that apply)",
+      "What are the three main categories of ITIL 4 management practices?",
     hasMultipleAnswers: true,
     answers: [
       {
@@ -3633,7 +3633,7 @@ export const quizQuestions: Question[] = [
   },
   {
     question:
-      "Which of the following are components of the ITIL 4 Service Value System? (Select all that apply)",
+      "Which of the following are components of the ITIL 4 Service Value System?",
     hasMultipleAnswers: true,
     answers: [
       {
@@ -4013,7 +4013,7 @@ export const quizQuestions: Question[] = [
   },
   {
     question:
-      "Which of the following are key activities in the ITIL 4 service value chain? (Select all that apply)",
+      "Which of the following are key activities in the ITIL 4 service value chain?",
     hasMultipleAnswers: true,
     answers: [
       {
@@ -4273,7 +4273,7 @@ export const quizQuestions: Question[] = [
   },
   {
     question:
-      "Which of the following are steps in the ITIL 4 continual improvement model? (Select all that apply)",
+      "Which of the following are steps in the ITIL 4 continual improvement model?",
     hasMultipleAnswers: true,
     answers: [
       {
@@ -4600,7 +4600,7 @@ export const quizQuestions: Question[] = [
   },
   {
     question:
-      "Which of the following are steps in the ITIL 4 Continual Improvement Model? (Select all that apply)",
+      "Which of the following are steps in the ITIL 4 Continual Improvement Model?",
     hasMultipleAnswers: true,
     answers: [
       {
@@ -4693,7 +4693,7 @@ export const quizQuestions: Question[] = [
   },
   {
     question:
-      "Which of the following are recognized change types in ITIL 4? (Select all that apply)",
+      "Which of the following are recognized change types in ITIL 4?",
     hasMultipleAnswers: true,
     answers: [
       {
@@ -4789,7 +4789,7 @@ export const quizQuestions: Question[] = [
   },
   {
     question:
-      "Which two factors determine incident priority in ITIL 4? (Select all that apply)",
+      "Which two factors determine incident priority in ITIL 4?",
     hasMultipleAnswers: true,
     answers: [
       {
@@ -4881,7 +4881,7 @@ export const quizQuestions: Question[] = [
   },
   {
     question:
-      "Which of the following are phases of Problem Management? (Select all that apply)",
+      "Which of the following are phases of Problem Management?",
     hasMultipleAnswers: true,
     answers: [
       {
@@ -5070,7 +5070,7 @@ export const quizQuestions: Question[] = [
   },
   {
     question:
-      "Which of the following are key components of service request management in ITIL 4? (Select all that apply)",
+      "Which of the following are key components of service request management in ITIL 4?",
     hasMultipleAnswers: true,
     answers: [
       {
